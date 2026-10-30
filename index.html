@@ -70,7 +70,7 @@
     </div>
   </main>
 
-  <!-- 后台管理 Modal (输入 PAT 解密与增删改查) -->
+  <!-- 后台管理 Modal -->
   <div x-show="openAdminModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4" style="display: none;">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
       
@@ -79,7 +79,7 @@
         <h3 class="font-bold text-slate-200 flex items-center space-x-2">
           <span>🛠️ 标签站点管理后台</span>
         </h3>
-        <button @click="openAdminModal = false" class="text-slate-400 hover:text-white">&times;</button>
+        <button @click="openAdminModal = false" class="text-slate-400 hover:text-white text-lg">&times;</button>
       </div>
 
       <!-- 模态框主体 -->
@@ -92,31 +92,37 @@
             <input type="password" x-model="githubToken" placeholder="输入具备 repo 权限的 GitHub Token..." class="flex-grow bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
             <button @click="verifyToken()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-medium transition">验证并解锁</button>
           </div>
-          <p class="text-[11px] text-slate-500 mt-1.5">Token 仅临时保存在当前会话内存中，关闭网页即自动销毁，安全不落盘。</p>
+          <p class="text-[11px] text-slate-500 mt-1.5">Token 仅临时保存在当前会话内存中，关闭网页即自动销毁。</p>
         </div>
 
         <!-- 第二步：解锁后的管理面板 -->
         <div x-show="isAuthorized" class="space-y-6">
           <div class="border-t border-slate-800 pt-4">
-            <h4 class="text-sm font-semibold text-slate-300 mb-3">➕ 添加新标签网址</h4>
+            <h4 class="text-sm font-semibold text-slate-300 mb-3" x-text="editIndex !== null ? '✏️ 编辑标签网址' : '➕ 添加新标签网址'"></h4>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-              <input type="text" x-model="newBookmark.title" placeholder="网站标题" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200">
-              <input type="text" x-model="newBookmark.url" placeholder="网址 (https://...)" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200">
-              <input type="text" x-model="newBookmark.category" placeholder="分类名称" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200">
+              <input type="text" x-model="newBookmark.title" placeholder="网站标题" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+              <input type="text" x-model="newBookmark.url" placeholder="网址 (https://...)" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+              <input type="text" x-model="newBookmark.category" placeholder="分类名称" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
             </div>
-            <button @click="addBookmark()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-medium transition">确认添加</button>
+            <div class="flex gap-2">
+              <button @click="addOrUpdateBookmark()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-medium transition" x-text="editIndex !== null ? '保存修改' : '确认添加'"></button>
+              <button x-show="editIndex !== null" @click="cancelEdit()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-xs font-medium transition">取消编辑</button>
+            </div>
           </div>
 
           <div class="border-t border-slate-800 pt-4">
-            <h4 class="text-sm font-semibold text-slate-300 mb-3">📋 现有标签列表与删除</h4>
+            <h4 class="text-sm font-semibold text-slate-300 mb-3">📋 现有标签列表与管理</h4>
             <div class="space-y-2 max-h-48 overflow-y-auto pr-2">
-              <template x-for="(item, index) in bookmarks" :key="item.url">
+              <template x-for="(item, index) in bookmarks" :key="index">
                 <div class="flex items-center justify-between bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-xs">
-                  <div>
+                  <div class="truncate mr-2">
                     <span class="font-medium text-slate-200" x-text="item.title"></span>
                     <span class="text-slate-500 ml-2 font-mono text-[11px]" x-text="item.url"></span>
                   </div>
-                  <button @click="removeBookmark(index)" class="text-rose-400 hover:text-rose-300 px-2 py-1 bg-rose-950/40 rounded border border-rose-900/50">删除</button>
+                  <div class="flex items-center space-x-1 flex-shrink-0">
+                    <button @click="editBookmark(index)" class="text-amber-400 hover:text-amber-300 px-2.5 py-1 bg-amber-950/40 rounded border border-amber-900/50">编辑</button>
+                    <button @click="removeBookmark(index)" class="text-rose-400 hover:text-rose-300 px-2.5 py-1 bg-rose-950/40 rounded border border-rose-900/50">删除</button>
+                  </div>
                 </div>
               </template>
             </div>
@@ -136,7 +142,7 @@
 
   <!-- 页脚 -->
   <footer class="border-t border-slate-800/60 py-6 text-center text-xs text-slate-500">
-    <p>&copy; 2026 XUGUO ｜ Jerry. All Rights Reserved. Powered by GitHub Pages & API.</p>
+    <p>&copy; 2026 XUGUO ｜ Jerry. All Rights Reserved.</p>
   </footer>
 
   <script>
@@ -148,11 +154,9 @@
         githubToken: '',
         isAuthorized: false,
         syncStatus: '',
+        editIndex: null, // 修复漏洞：记录当前正在编辑的索引
         
-        // 初始标签数据（后续会从 data.json 或同步中加载）
-        bookmarks: [
-
-        ],
+        bookmarks: [],
 
         newBookmark: { title: '', url: '', category: '' },
 
@@ -171,7 +175,6 @@
         },
 
         async init() {
-          // 尝试自动加载同目录下的 data.json
           try {
             let res = await fetch('./data.json?t=' + Date.now());
             if (res.ok) {
@@ -179,7 +182,7 @@
               if (Array.isArray(data)) this.bookmarks = data;
             }
           } catch(e) {
-            console.log('使用默认本地初始数据');
+            console.log('使用默认本地初始数据或等待加载');
           }
         },
 
@@ -206,31 +209,48 @@
           }
         },
 
-        addBookmark() {
+        // 修复漏洞：点击编辑加载数据
+        editBookmark(index) {
+          this.newBookmark = { ...this.bookmarks[index] };
+          this.editIndex = index;
+        },
+
+        cancelEdit() {
+          this.newBookmark = { title: '', url: '', category: '' };
+          this.editIndex = null;
+        },
+
+        // 修复漏洞：智能判断是新增还是保存修改
+        addOrUpdateBookmark() {
           if (!this.newBookmark.title || !this.newBookmark.url || !this.newBookmark.category) {
             alert('请完整填写标题、网址与分类');
             return;
           }
-          this.bookmarks.push({ ...this.newBookmark });
+          if (this.editIndex !== null) {
+            this.bookmarks[this.editIndex] = { ...this.newBookmark };
+            this.editIndex = null;
+          } else {
+            this.bookmarks.push({ ...this.newBookmark });
+          }
           this.newBookmark = { title: '', url: '', category: '' };
         },
 
         removeBookmark(index) {
           this.bookmarks.splice(index, 1);
+          if (this.editIndex === index) {
+            this.cancelEdit();
+          }
         },
 
         async syncToGitHub() {
           if (!this.isAuthorized) return;
           this.syncStatus = '正在同步数据到 GitHub 仓库...';
 
-          // 配置你的 GitHub 用户名与仓库名
-          // 配置你的 GitHub 用户名与仓库名
           const owner = '234146326';
-          const repo = '234146326.github.io'; // <--- 修改后
+          const repo = '234146326.github.io';
           const path = 'data.json';
 
           try {
-            // 1. 获取当前文件的 SHA（GitHub API 更新文件必须提供对应文件的 SHA）
             let getFileRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
               headers: { 'Authorization': `Bearer ${this.githubToken}` }
             });
@@ -241,7 +261,6 @@
               fileSha = fileData.sha;
             }
 
-            // 2. 提交更新到 GitHub
             let contentEncoded = btoa(unescape(encodeURIComponent(JSON.stringify(this.bookmarks, null, 2))));
             let putRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
               method: 'PUT',
